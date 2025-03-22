@@ -1,0 +1,58 @@
+Reliable, Scalable and Maintenable Applications
+
+What a Data intensive Application have? What are the building blocks?
+ - Store data (Databases)
+ - Remember results of expensive operations (Caches)
+ - Allow search by keyword or filter (search indexs)
+ - Send message to another process async (stream processsing)
+ - Crunch large amount of data (batch processing)
+
+Data Systems - Databses, Caches, Message queues. All of these are Data systems. All store data, but the way they store it, the duration for which they store it, differentiate them.
+We can use a message queue (Kafka) for database pruposes as well as they provide database like durability.
+But its a good idea to use specific data system for specific requirement.
+Suppose you have a DB, Cache and a Search engine. Now its the duty of application code to keep them all in sync.
+
+
+Three Important Pillars for designing Data intensive apps
+  - Reliability - The system should continue to work correctly even in the face of adversity (hardware or software failures or human errors).
+  - Scalabilty - As the system grows (in data volume, traffic volume or complexity), there should be reasonable way of dealing with that growth.
+  - Maintainabilty - With time as we maintain current behaviour and add new features, people should be able to work on the system productively.
+
+Reliability
+System should give the desired output for a given input. It should be able to handle user mistakes. 
+Our system should be fault tolerant. What is fault tolerant? It should be able to gracefully handles faults. 
+There is a difference between fault and failure. Failure is your system is not responding at all. Faults are things that can go wrong (wrong input, service failure etc.)
+Due to faults our system should not fail. That is why we need fault tolerance in our systems. 
+
+Hardware Faults - When faults occurs due to hardware issues. Power outage, RAM fault, Hard disk crash. Hardware faults are not stoppable. What can we do?
+We can add backup generators to prevent power outage. We can have data duplicated to other disks for Hard disk crash. etc. etc.
+
+We need redundancy of hardware components (RAM, disk etc.) We don't need redundancy of full machines. As it is very rare to get a full machine down. However for machines
+where downtime should be very low, we can have Full redundant machines as well. 
+
+Software Faults - These can be catastrophic. One software failure can lead to multilpe other software failure as well. One bad input to a request may lead to softwarfe failure.
+One small bug in code/service can lead to downtime of other services as well that are dependengt on this.
+
+Human Faults - We cannot do anything in this. Humans tend to make mistakes. What can we do? Have sandbox environment for testing, Have Clean UI, use abstarction, minimal user input,
+automate everything. 
+
+
+How important is Reliabilty?
+Reliabilty is very importnant. We can lose productivuity, Business, Have law suits if our system is not reliable.
+Suppose Google Photos gets corrupted all your data is gone, You have no backups. Then what?  So our systems should be reliable. They should be able to handle faults gravefully
+and faults should not lead to failures.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
