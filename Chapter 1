@@ -44,6 +44,57 @@ and faults should not lead to failures.
 
 
 
+Scalability
+If a system is reliable today, that doesn't mean it will be reliable in future as well. With increase load systems fail. So scalabiluty means as the load increase our system
+should be able to gracefully handle that load.
+
+Describing load - No. of req per second, No of simulataneious person in a chat room, No. of viewers on a live stream, No. of read:write on a DB
+
+Lets take an example of twitter
+1. Write tweets (Max. 12k/sec)
+2. Read tweets (Max. 300k/sec)
+
+Main challende is read tweets. So twitter has 2 approaches, At the time of writing tweet, it can just save the tweet and then when user asks for home feed, we search for all the
+tweets and then select the users followed bu this user and filter tweets based on that. This is very slow. First version of twitter followed this, but this became a issue
+quickly. So they need a better version.
+So they created a cache feed for each user ahead of time. If a user make a tweet we push this to all its followers cache. So when user loads home feed, it loads without any computing,
+as it is done already.
+
+But there is a downside for this as well. Now writing tweets is time consuimg, as we need to push this in all the feeds of followers.
+And if a user have 30M followers, we need to do 30M writes. 
+So later twitter followed a hybrid approach. For users with less followers they fanout the tweets (appraich 2). For user with large followers, they user approach 1.
+At the time of loading if a user follows a celeb, we will fetch its tweets and merge woth the users cache feed.
+
+From this we can learn that every system have different kind of load. Twitters load are on write/reads per second. Another system may have some other kind of load.
+
+
+Describing performance - Once load is defined, we need to investigate what happens when load is increased.
+
+
+
+Latency and Response time - These two are ofte user synonymously, but they are different thing. Response time is after what time a client sees a response for a request. It includes 
+network delayes, queue delays etc. Latency is the time when the request is waiting to be handled. Durting which it is latent, awaiting service.
+
+
+
+Percentile time - How much time it took to get the response.
+p50 for 200ms, means 50% user get the result back in less than 200 ms and for other 50% it took more time.
+p95 for 1.5s, means 95% user get the results back in less than 1.5 ms and for other 5% it takes more than 1.5s.
+
+High percentile of response time, also known as tail latencies. These affect user experience.  If p99.99 response time is 10s, this is bad, we need to turn the time down from 10s to somewhere 3s.
+It is very hard to do this and sometimes its not worth the efforts and money.
+
+Queueying delays are the most culprit for increase in response time. If a request is holding the resources and other requests are waiting, it increase the response time.
+Even though the other requests maybe faster but still the overall time is increased.
+
+When several backend calls are needed to serve a request, a single slow backend request slow down the entireend user request.
+
+
+
+
+
+
+
 
 
 
