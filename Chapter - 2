@@ -1,0 +1,38 @@
+Many to one relationship - Easily solved by NoSQL. Can be done with document DBs.
+
+
+Many to Many relationship - Requires joins. Joins not possible with NoSQL DBs (rarely possible). Here relation DBs win.
+
+
+Network model - designed in 1970s to solve the man to many relationship. Didn't worked out. In this we have tree like structure. One root node from which multiple other nodes emerge. 
+So if we want to get to a node there can be multiple ways. So dev needs to remember all the ways to a destintion. Quite slow to find and difficlt to add new entites.
+
+
+Relational model - Comes to the rescue. Everything is in tables. Easily insert rows, Query is very easy. Joins between tables are easy. Many to mnay relationships can be
+easily demonstrated with Relational model. Have foreign keys to refer other tables. 
+
+Comparison to Document DBs - Document DBs follows hierarchical model. We store nested records within the parent record rather than in a seperate table. 
+When it comes to representing many to one or many to many relationships, relational and Document DBs are not fundamentally different. In bothe cases the related item is referenced by a unique identifier which is called a foriegn key in relational model and a document reference in the document model. 
+
+Relational vs Document DBs
+COmparing only on Data models
+    Document DBs - schema flexibilty, better performance due to locality, for some applications closer to the data structures used by the application.
+    Relational DBs - Better support for joins, and many to one and many to many relationships. 
+
+Simpler applicaiton code?
+    Document DBs - If data in application has docuement like strcuture, then use Document DBs. But there are limitations as well - For accessing nested component we need to use
+    the complete path. Poor support of joins but this is usually not a problem. We never have many to many relationships in document model.
+
+    If we have many to mnay relationships then better to use a Relational Model as Document model is not suited for this.
+    Much better to use a Graph models to represent many to many relationships.
+
+Document Model - Schema on read. Schema is flexible and can be anything. At the time of reading we will interpret the type of fields at that path/location. Adding new type/field is easy. Just add a new field in JSON structure.
+Relational Model - Schema on write. Schema is fixed at the time of writing and we cannot add any arbitray schema values. Adding new column is difficult, we need to alter the table and then perform Update on the tables.
+
+Data locality for queries - A document is stored in a single continuous string encoded as JSON, XML or BSON. If our application often needs to access the entire document, there is a performance advantage to this storage locality. If data is split across multiple tables, multiple index lookups are required to retrieve it all.
+
+The localoty advantage only applies if you need large parts of the document at the same time. The DB typically needs to load the entire document, even if we have to access only a small portion of it, so its a waste on large docuemnts. On updates to a document, the entire document needs to be rewritten. So due to these its recommended to keep docuemnts small.
+
+Most relational DBs support XML documents. They can store these XMLs. They have methods to index or query inside XML docs. THis is very similar to what we do for docuemtn models. Some DBs support for JSON docuemnts as well.
+With time some Docuemtn DBs have support for JOINs and queries.
+Day by Day both the type of Dbs are having similarity and its good. We can have a hybrid DB with advantages of both.
