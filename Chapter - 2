@@ -36,3 +36,32 @@ The localoty advantage only applies if you need large parts of the document at t
 Most relational DBs support XML documents. They can store these XMLs. They have methods to index or query inside XML docs. THis is very similar to what we do for docuemtn models. Some DBs support for JSON docuemnts as well.
 With time some Docuemtn DBs have support for JOINs and queries.
 Day by Day both the type of Dbs are having similarity and its good. We can have a hybrid DB with advantages of both.
+
+
+
+Query Languages for Data
+Declarative lanuages - CSS, SQL (Very limited functionalitym giving more power to query optimizer/ Databases). It is easy for SQL code to run on multiple machines (easy for distributed env)
+Imperative languages - C++, JS, Java etc. (In distributed env. its difficult to run imperative code).
+
+
+Graph like data models
+When our data have too many to many relationships, then its best to describe it as a Graph data model.
+Graph consists of nodes and edges (relationships).
+We can operate algorithms on these graph data models to get faster results.
+
+The nodes here can be anything (any data type) and vertices represrnt different kind of relationship.
+Facebook maintains a single graph with many different types of nodes and edges. Nodes represent people, locations, events,, checkins etc.
+Edges represents which people are friends with each other, which checkin happened at which location, who commented on which post etc.
+
+There are different ways for structuring and querying data in graphs.
+Models:
+    property graph model
+    triple store model
+
+Declarative languages (Similar to SQL)
+    Cypher
+    SPARQL
+    Datalog
+
+Imperative languages
+    Gremlin
