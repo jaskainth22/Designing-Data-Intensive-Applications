@@ -1,0 +1,22 @@
+Storage and Retreival
+
+In this chapter we will see how data is stored inside a DB.
+
+Simplest form of DB.
+DB_GET(key) returns value
+DB_SET(key, value)
+
+So DB_SET will set the key-value at the end of file.
+It will not deted the previous entries of the same key.
+SET operation is quite fast O(1).
+
+DB_GET will search for the last occurence of this key and returns the corresponding value.
+This operation is quite slow. We may need to search the entrie file. O(n).
+
+We can optimize this search operation using indexes.
+
+Index is an addiitonal data strcuture. The general idea behind them is to keep some addiitonal metadata on the side, which acts as a 
+signpost and helps you to locate the data you want. An index is an additional strcuture that is derived from the primary data. 
+Many DBs allows us to add and remove index, this doesn;t affect the content in DB, it only affect the performance of queries.
+The read operation will become fast by using indexes but the write operations will become slow.
+So its a tradeoff. 
