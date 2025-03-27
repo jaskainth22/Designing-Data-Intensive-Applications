@@ -65,3 +65,28 @@ Declarative languages (Similar to SQL)
 
 Imperative languages
     Gremlin
+
+
+
+
+Property Graph Model
+Each Vertex:
+    A Unique identifier
+    A set of outgoing edges
+    A set of incoming edges
+    A collection of properties (Key-Value pairs)
+
+Each Edge:
+    A unique identifier
+    The vertex at which the edge start
+    The vertex at which the edge ends
+    A label to describe the kind of relationship between the two vertices
+    A collection of properties
+
+This graph model is very extensible. We don';t need to restrict the type of relationships or data type with any other vetrices or edges. 
+
+
+In todays time these are the most common used data models
+Relational - Data is related and put in tables. Use joins and queries to fetch the data. Data structure is predefined. Good for One to many and can be used for many to many relationships
+Document - Data is in Document format (JSON). Data type can be anything. Flexible, no need to predefined data types. Good for One to many relationships. Not good for many to many relationships.
+Graph - Designed specifically for Many to Many relationships. Flexible data type. No need to predefine.
