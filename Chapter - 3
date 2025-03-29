@@ -20,3 +20,69 @@ signpost and helps you to locate the data you want. An index is an additional st
 Many DBs allows us to add and remove index, this doesn;t affect the content in DB, it only affect the performance of queries.
 The read operation will become fast by using indexes but the write operations will become slow.
 So its a tradeoff. 
+
+=========================================
+29/03/2025
+
+
+Hash Indexes:
+We know what a hash table is. For a given key we can look for a value in a hash table in O(1) time.
+So for indexing Key-Value store, We can use HashTable for indexing.
+Take the example where we are storing the Key-Value in a file. Each write is done at the end of a file.
+
+Now For each write do a entry of that key in Hash Table. And for that hash key the value will be the offset/memory pointer where that data is stored. 
+
+For Ex.
+
+Key - Value Store
+Cat - 1
+Mouse - 2
+Dog - 3
+Cat - 4
+Dog - 5
+
+Corresponding Hash Table
+Cat - 1, 4 (These are basically the offsets/memory pointers from where we can directly fetch this data)
+Mouse - 2
+Dog - 3,5
+
+If you want to get the latest value, return the last value in the list
+This is the scenario where we want to keep all the entries of a key in hash table.
+
+Suppose if you only want the latest value and the past values are redundant to you.
+We need not store the complete list. For ex. we are just storing the counter of how many times a key is accessed.
+
+Cat - 4
+Mouse - 2
+Dog - 5
+
+Since we are only writing to a disk, We can run out of disk space. How do we prevent that?
+So don't write in a single file, When one file reach a certain size, start writing in other files.
+Then perform a compaction on all the files. Meaning merge the file and keep only the latest entry.
+
+This compaction can be an async process. Once the compaction is done we are safe to delete the old files and just read from the new one.
+
+Each segment (file) has its own hashmap. So when we need to look for a key, we first check the most recent segment hashmap, then the second most recent and so on.
+Since compaction and merging keep the no. of segments on lower side.
+
+BTW this hashmap is in memory. Using system RAM.
+Bitcask is a very popular Key-Value store that works well with just this basic approach.
+
+1. Deleting a record - For deleting a record we add a flag in the file/segment, When we do merge, We discard the previous key from hastable and the new segment entry.
+2. Crash recovery - If the server restart the in memory data store is lost. We can normally traverse the all segemnts and generate the hashmaps again but that is very slow. Instead we can keep the snapshots of the hashmaps and store them in datadisk.
+3. Partially written records - If the system crashes midway, Bitcask have checksums to detect that and rollback.
+4. Concurrency control - For writing we will have a single write thread but for read we can have multiple. So write will happen in a sequential manner but for reading multiple threads can access at the same time.
+
+An append only design seems like a waste. Why don;t we update the values instead of keep appending and then doing merging and maintaining seperate hashmaps for each segment. 
+Well there are advantages.
+1. Appending and segment merging are sequential write operations, which are much faster than random writes.
+2. Concurrency and crash recovery are much simpler if segment files are append only. Bcz suppose during a write a crash happened. If we have random writes we can be in a state where we are in between the old and new data.
+3. Merging old files avoids the data fragmentation problem.
+
+Well there are some issues as well in using HashMap index
+1. Since its in memory we are limited. Once the RAM is full, we cannot do anything. We can use a in memory hashMap but that is not fast enough.
+2. Range queries are not efficient. We cannot look up all the keys between certain size (1000 - 9000). We need to go over all the keys one by one.
+
+
+
+
