@@ -144,3 +144,34 @@ When a key does not exist, we need a lot of read operations.
 We first need to check the Memtable, then the various segments. Only then we can be sure that this key does not exist.
 This is very long operation. To optimize this we can use Bloom Filters. (It is an in memory datastore that can efficiently tell if a key exist in DB or not.)
 
+
+
+
+B-Trees
+Most relational DBs uses B-Trees for indexing. How is it different from the log based indexing?
+Well in log based indexing we have a segments of variable sizes, with each segment having a index (hash table). 
+But in Btrees we have a fixed size block. In these blocks we store key value pairs.
+One block will have ref to other blocks. The value for a particular key will be at the leaf node.
+
+Root Block:
+ref, 100 - ref, 150 - ref, 200 - ref |  This block will lead us to data between keys 100 <= key < 200
+
+ref , 111 - ref, 127 - ref, 140- ref | So the first ref in the root block lead us to this
+
+This way we need to traverse and we will get to the jey we are looking for.
+O(Logn) for search/ Update.
+For adding new key search the particualr block, if there is space insert the key.
+If not divide that block into 2 full sized block update the ref in parent block and do addition.
+
+B-Trees are quite reliable and has been time proven.
+
+Most fundamental difference between B-Trees and Log based LSM Trees is that B-Trees update the data in place. Whereas LSM Trees just append the new data to the end of file and later do merging.
+Since we are doing InPlace update, It is required/assumed that the updating do not change the data location.
+
+There are some issues as well, Suppose during write operation the block got full, we need to split the block into 2 blocks and then update the 2 blocks and the parent block with new refrences.
+During this whole operation if DB crashed, We will be in a stale sitation. Our DB will have incorrect/stale data.
+How to remove this issue?
+Have a WAL (Write ahead log), before doing any modification in B-Tree append the new update in this WAL. If something crashes, We can regenerate the B-Tree using this WAL.
+
+There is a concurrency issue as well. If during write operation we have a read operation as well, How will you honor this? In LSM trees since the new data is just appended in the latest segment, we can always honor a concurrent read request from older segements and then the remerging and all can happen later.
+To avoid this B-Trees uses Light weight locks.
