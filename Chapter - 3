@@ -84,5 +84,63 @@ Well there are some issues as well in using HashMap index
 2. Range queries are not efficient. We cannot look up all the keys between certain size (1000 - 9000). We need to go over all the keys one by one.
 
 
+=================================
+30/March/2025
 
+SS Tables (Sorted string table)
+In the normal log segents with hash indexing, we were just appending the key-value pairs at the end of the file. The older values of the key takes precedence. Otherwise it doesn;t matter how the other keys are arranged.
+
+If while writing we sort the key value pairs based on the key, they are called SS tables. We also require that each key only appears once in the merges segment, that is already ensured by the compaction processs.
+
+How is this helpful over the normal log segments with hash indexing?
+
+1. Merging segment is very easy. We will use the concept of merge sort. We will take the most recent and the second most recent segment and merge them. The merged segment is also sorted.
+What if 2 segments have the same key?
+Its simple, choose the key-value which is most recent (i.e. from the latest segment).
+
+2. We not don't need to index each key. Why? We can index some keys and then from those keys we can get to our target key since the file is sorted.
+
+For ex. 
+Index
+HA1 - 0x7489
+HA5 - 0x8780
+HA9 - 0xiue2
+
+Suppose you need to find HA7, Since you know the offset of HA5 and HA9, just scan between these keys in the SS Table.
+
+This prevent memory exhausation since very few keys are indexed.
+
+3. Since for read requests we need to scan over multiple keys, We can divide the SS (sorted segment) tables in multiple blocks.
+
+For ex. All the keys from HA1-HA4 in Block1. All the keys from HA5-HA8 in other block.
+We can compress these blocks and save them on disk. Now the index will point to the offset of these blocks.
+This prevents space and network I/O.
+
+
+Constructing and Maintaining SS Tables
+How can we get the Key-Value pairs to be in sorted order?
+maintaining a sorted structure in disk is possible (B-Tress)
+maintaining a sorted structure in memory is very easy.
+We can use a Tree data structure like Red Black trees or AVL trees. In these trees we can insert the data in any order but we will read them in sorted order.
+
+******  VERY IMPORTANT START  *********
+We can make our storage engine work as follows:
+1. Have an In memory Tree Data structure like AVL tree, Write the data to this tree. Since this is in memory we can call it memtable.
+2. When the memtable reaches a certain size write the data on disk as a SS table file. This new SS table becomes the most recent segment.
+3. For reading we will first try to find the key in the memtable, then the most recent segment, then the second most.
+4. From time to time run a merging process to merge these segments. With this we can remove the deleted keys and overwritten keys.
+
+
+This suffers from only one problem, In case of a crash the data that is present in memtable will be lost, as it is still not written to SS table.
+To remove this problem, just have a log file which will append all the data in the end. It will just write the data in memtable.
+Once the memtable data is written to SS table, we can discard this log. This is just for crash purposes.
+
+******  VERY IMPORTANT END  *********
+
+Above algorithm is used in LevelDb and RockDB. Storage engines in Cassandra and HBase are also inspired by this. These type of storage engines are called LSM engines (Log structured merge tree).
+
+Performance optimizations:
+When a key does not exist, we need a lot of read operations.
+We first need to check the Memtable, then the various segments. Only then we can be sure that this key does not exist.
+This is very long operation. To optimize this we can use Bloom Filters. (It is an in memory datastore that can efficiently tell if a key exist in DB or not.)
 
