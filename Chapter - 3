@@ -175,3 +175,26 @@ Have a WAL (Write ahead log), before doing any modification in B-Tree append the
 
 There is a concurrency issue as well. If during write operation we have a read operation as well, How will you honor this? In LSM trees since the new data is just appended in the latest segment, we can always honor a concurrent read request from older segements and then the remerging and all can happen later.
 To avoid this B-Trees uses Light weight locks.
+
+
+
+
+============================
+31/03/2025
+
+Comparing B-Trees and LSM Trees
+As a rule of thumb, B-Trees are read efficient and LSM Trees are write efficient. Reads are slower on LSM trees because we need to look at several SS tables to get the data.
+
+Advantages of LSM Trees
+1. B-trees write every peice of data twice, one in the WAL and then in the actual disk location.
+2. Log structured indexes also do multiple writes over the lifetime. They do compaction and merging of SSTables. One write to the DB results in multiple writes over the lifetime, this is called write amplifictioa. This causes issues in SSD, as for overwrites they will wear out quickly.
+3. LSM trees uses less space as we can do compaction and merging process. Furthermore we can compress the segments into smaller blocks. While in B-Trees a lot of space is wasted in fragmentation. When we need to split a page to add another key some data will be wasted in the newer pages.
+4. LSM trees have higher write throughput because they just write once to the Memtable and later the other writes are async. While in B-Trees there are mutiple writes during the course of one operation.
+5. Many SSDs internally uses log structured algorithms, As Log structured Algos have less fragmentation and less write throughputs, Also we have high I/O Bandwidth. 
+
+
+Downside of LSM trees
+1. The ongoing Compaction process can sometime interfere with the the read and write requests. Although the compaction is a async process and is completely random, but during compaction if we have a read req, it will need to wait.
+2. The compaction process and the flushing of Memtable to SSTables. The first time operation when we flish the data from memtable to SS table is very fast, but Once the DB grows in size, The compaction process might slow down.
+3. If the incoming write requests are much larger, and the compaction process is not frequent we will have multiple unmerged segments, This will lead to increase disk space and slower reads. 
+4. Advantage of B-trees is that it has the key in only one place, but in LSM trees we have the key in multiple segemtns. For DBs which require transactional control like Relational DBs, B-Trees are much preferred as they need to put locks before write and this can be directly doable in B-Trees.
