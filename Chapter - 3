@@ -198,3 +198,23 @@ Downside of LSM trees
 2. The compaction process and the flushing of Memtable to SSTables. The first time operation when we flish the data from memtable to SS table is very fast, but Once the DB grows in size, The compaction process might slow down.
 3. If the incoming write requests are much larger, and the compaction process is not frequent we will have multiple unmerged segments, This will lead to increase disk space and slower reads. 
 4. Advantage of B-trees is that it has the key in only one place, but in LSM trees we have the key in multiple segemtns. For DBs which require transactional control like Relational DBs, B-Trees are much preferred as they need to put locks before write and this can be directly doable in B-Trees.
+
+
+
+
+Other indexing structures
+primary key - Unique, cannot be null, only one per table, used to uniquely identify a row
+secondary key - Same values possible, can be null, used for indexing and joins
+
+So far we have looked at the indexes which are used on the primary key. We can create secondary index on other keys as well. Secondary index can be created using the B-Trees or LSM Trees. Only difference is that the keys will not be unique as there can be duplicates.
+This can be avoided by having a single key and references to all the entries. Or have unique key based on the row identifier.
+
+Storing data within the index
+In the index we have keys which are used for querying and the values can conatins the exact row/document. Or mostly it just contains the pointer to where the actual data is present.
+This file is called the heap file where the data resides. In the cases where we have multiple indexes its not good to store entire row/document in index. Instead just store the pointer to the heap file.
+
+When we want to update the data, we can directly update the heap file and all the indexes can refer to the same file. If the new data is larger than the old data, then we need to change the location where the new data will be written. Either can update all the indexes with the new location or we leave a forwarding pointer. 
+
+In some situations the extra hop from index to heap file is too much, so in that cases we store the entire row/document in the Index value. These are known as clustered indexes.
+
+Clustered indexes will lead to increase speed and performance. But this will lead to increase in size of the index. Also the writes will be slow as we need to duplicate the data to the index as well. We need to maintain consistency as well.
