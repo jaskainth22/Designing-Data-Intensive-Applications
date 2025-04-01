@@ -218,3 +218,32 @@ When we want to update the data, we can directly update the heap file and all th
 In some situations the extra hop from index to heap file is too much, so in that cases we store the entire row/document in the Index value. These are known as clustered indexes.
 
 Clustered indexes will lead to increase speed and performance. But this will lead to increase in size of the index. Also the writes will be slow as we need to duplicate the data to the index as well. We need to maintain consistency as well.
+
+
+=========================================================
+
+1/4/2025
+
+Multi Column index
+If we want to search based on two keys (columns) then we need to use MultiCoumn indexes. 
+For ex. 
+Seclect * from Person where name = 'Jaskaran' and city = 'Bangalore'
+
+In general, In B-trees and LSM trees we have index over single column. But we can create index over multiple columns as well.
+They will work but not that efficient.
+There are specialized indexes which are used for these purpsoses.
+
+Full text search and fuzzy indexing
+Till now we have assumed that we will know the key that the user is searching for and we will just return the value.
+But what about search engines, where we have to present all the results based on the entered word. That word can be mispelled as well so we need to accomodate that also.
+Think of LSM trees and SS tables. We can look for the entered word and all the nearby words as well (sorted) and return the results.
+
+In memory Databases
+Keep everything in memory. Till now for the indexes we have seen we are using In memory storage for small operation but the data is actually stored in disk. 
+With time, RAM are cheaper, so there are indexes which completely store all the data in RAM. If there is a power outage we need to rebuild this index again. For this we can use a WAL in disk or have another replica of index running on another machine. 
+Ex. Memcached (In memory key value datastore)
+Redis is also an example if in memory datastore.
+The main advantage of in memory datastore is not that we never need to read from disk, that is possible with other indexes (LSM and B_trees) if we use much larger RAM.
+The advantage is that we need to not to implement different data strcuture to write to disk. There is overhead for that.
+
+Recently there have been studies to have more data in in-memory datastore than the available size. This is possible by removing the least used data from memory and storing that in disk, when it is accessed it is moved back to memory.
