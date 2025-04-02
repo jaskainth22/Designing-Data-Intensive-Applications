@@ -247,3 +247,53 @@ The main advantage of in memory datastore is not that we never need to read from
 The advantage is that we need to not to implement different data strcuture to write to disk. There is overhead for that.
 
 Recently there have been studies to have more data in in-memory datastore than the available size. This is possible by removing the least used data from memory and storing that in disk, when it is accessed it is moved back to memory.
+
+
+======================================================
+02/4/2025
+
+Transacation processing vs Analytics
+The word transaction corresponds to a commercial transaction. Like making a sale, paying salary etc.
+OLTP (Online transaction processing) - Read/write data from DB.
+
+Transacation need not be ACID, it just means low latency read and write.
+
+Earlier for data Analytics also we were using the same DBs. In data Analytics we need to analyze the data, and make multiple operations on the data.
+This is called OLAP (Online Analytics processing)
+With time for OLAP we migrate ways from Normal DBs and started using data warehouse
+
+
+Data warehouse
+Often in a company, we have multiple DBs. Each of these DBs are used for OLTP. We generally don't use directlty these DBs for making OLAP as these queries are expensive and may take time.
+Hence we extract the data from all these DBs and dump them in a seperate read only DB.
+The Business Analyst makes there queries on this DB. This DB is called a Data warehouse.
+
+Why do we need a seperate Data warehouse?
+Why can't we make OLAP on the normal DBs?
+
+Bcz the normal DBs are not designed for such heavy analytics operations.
+The normal indexes we have studied like (B-Trees and LSM trees) will not perform good for analytics queries.
+
+Data model of Data warehouse is mostly Relational, as for analytics we generally uses SQL queries. It makes sense to use a Realtional DB for analytics as most of the data is realted. Internally data warehouse and normal Relational DBs are very different. On the surface they both uses SQL.
+
+These days in a DB either we will have data warehousing support or OLTP support. Its very unconventional to support both.
+
+Ex. SAP HANA, Teradata, Vertica etc.
+
+Data modeling - Star schema, snowflake schema
+We generally have a facts table in the middle, This facts table will store all the events that happens at a particular time.
+For ex. all the sales made at a particalar time.
+
+All the other tables have the foreign keys in this table. That why a name star. Fact table in the middle and all other tables around it.
+
+In snowflake schema, we further divide the surrounded tables in smaller tables.
+
+The Facttable is very large, it generally have 100 of columns and the rows are a lot. As for each timestamp we will have a entry.
+
+
+Column Oriented Storage
+In Data warehouses, we generaly query for 3,4 columns in a single query. We rarely do (Select *), So it is a waste if we use the normal DB. In normal DB, we generally have index over a particualr key and from that we query and get the rest of rows. But still we need to get all the columns from a particualr row which is a waste.
+
+Instead Datawarehouses uses Column oriented storage. In DB they don;t store the rows, they store columns. 
+Each column is stored in a DB file and when we need to get a particualr row, We just get the data from that particualr columns. One thing that is required is that the data is stored in continuos fashion in all the columns file.
+By this way the processing is quite easy.
