@@ -297,3 +297,20 @@ In Data warehouses, we generaly query for 3,4 columns in a single query. We rare
 Instead Datawarehouses uses Column oriented storage. In DB they don;t store the rows, they store columns. 
 Each column is stored in a DB file and when we need to get a particualr row, We just get the data from that particualr columns. One thing that is required is that the data is stored in continuos fashion in all the columns file.
 By this way the processing is quite easy.
+
+
+=============================================
+03/03/2025
+
+Column compression
+Since we are storing the columns in the file now, we can further compress these columns, As most of the data in a column is either similar or in reptitive fashion, We can easily compress this. There are various compression techniques that we can use here like BitMask.
+
+Since now we have the columns data and also in compressed format we can put that frmo disk to memory while processing. Earlier it was a bottleneck to get the data from disk to memory as the data was a lot. Think anout it, if we had a row oriented storage, we need to get all the rows and columns and that data would be huge.
+But now since we have only specific columns and that only for a few rows and further in compressed format, large amount of data can be put in memory for processing while making queries.
+
+We can further sort the data based on a particular column, this will help in getting faster queries.
+
+Writing to column oriented storage
+Well reads are fast in column oriented storage as we already discussed. But the writes are slow. Because if we want to insert a new row somewhere in the middle, we need to update all the column files simultaneously. and takes time.
+This problem is already resolved as we discussed in LSM trees, We will first store the data in-memory. Then as the writes accumulate,  we will merge them with the disk.
+While reading the storage engine need to check both the memory and the disk.
