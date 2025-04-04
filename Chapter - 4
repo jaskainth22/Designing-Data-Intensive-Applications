@@ -1,0 +1,51 @@
+Encoding and Evolution
+
+
+Formats of Encoding data
+When the data is present in memory we can keep in data structures like arrays, trees, graphs etc. CPU can normally access these using pointers.
+But if we want to store these in a file, we need them as a sequence of bytes. Like a JSON. 
+
+The translation from in-memory to a byte sequence is called encoding,
+and the reverse is called decoding.
+
+Language specific Formats
+Many Languages have in built encoders and decoders. We can directlty use them to convert the in-memory data strcuture to sequence bytes. 
+Its generally not a good idea to use inbuilt encoders/decoders.
+
+1. The encoding is often tied to one language and we need to deocde that in the same language. So we are restricting the other party to use any other language.
+2. IN order to restore data in the same object types, the decoding process need to instantiate the arbitray classes. This is generally a bad idea, if anyone else got this data, they will be able to get access to our class structure and can remotely access our code.
+3. Effiency is also a problem. The inbuilt encoders/decoders of Java are not efficient. They take a lot of time and the size is bloated.
+
+There are thirs party encoders and decoders available that can resolve these problems.
+
+JSON, XML and Binary variants
+
+JSON, XML, CSV these 3 are the most popular to send data as sequential bytes. However there are certain issues in each of them. Some of them does not support byte format, some of them do not distinguish between integers and string, there is an issue with floating point numbers etc. 
+However these 3 are still very popular choice for storing bytes on a file.
+
+We have binary encoding as well, that can further encode the JSON and XMLs. This will space while storing in DB.
+
+
+The writers schemas and the readers schemas
+If we are encoding some data to send it over a network or storing in DB. This is known as writers schemas.
+
+While decoding the data, it is expected the data to be in some schema. THis is called readers schema.
+It is not required for the two schemas to be same. THe fields can be interchangable in both schemas.
+Some fields maybe present in one schema but not in other.
+For ex. if a field is present in writers schema but not in readers schema, we will not add that in readers schema.
+If some fields is not present in writers schema, we will take a default value for that field.
+
+
+How will the reader schema knows about the writers schema?
+
+1. Large file with lots of records - If we have encoded millions of files with hige records, each file having same type of schema, then in the beginning of that file we can put the schema type.
+2. Database with individual records - WHile storing the data in DB, we can have a schema number in front of the record, That will help in identify the writer schema at the time of decoding. We can have a seperate table where we are storing these schemas based on the numbers.
+3. Sending records over network - At that time both the sender and the reciver can agree on a schema type. We should not deviate away from agreement.
+
+Consider CVLT, while storing the data in DB in XML format, we have the XML message type in the beginning of the message, so while decoding that data we know ok this is the data schema before encoding.
+
+Not much notes till now all about the JSON, XML, Protocol buffers, AVRO etc. Not much intersted in these topics.
+
+=================================================================
+
+Modes of Dataflow
