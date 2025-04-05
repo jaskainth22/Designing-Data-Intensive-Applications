@@ -49,3 +49,82 @@ Not much notes till now all about the JSON, XML, Protocol buffers, AVRO etc. Not
 =================================================================
 
 Modes of Dataflow
+
+Whenever we want to send some data to another process with which we don't share memory, we need to encode it as a sequence of bytes and then send it.
+
+Backward compatibilty - Old code is still functioning with the new data
+Forward compatibilty - new code is still working with the old data
+
+Dataflow through Databases
+the process that writes the data to DB, encodes it.
+the process that reads the data from DB, decodes it.
+
+It can be a single process doing both these operations. So in that case it is similar to writing data for your future self.
+Backward compatibilty is a must here else the future process version will not be able to understand the old data.
+
+In general, several processes access the DB at the same time, Some of these processes run on new version of code and some of these processes run older version of the code.
+In this case, new version code can write the data in DB, so older version should be able to process it. So Forward compatibilty is also a must here.
+
+Problem: Suppose new version of code add a new field in DB schema, When old version of code reads that data, it will not be able to interpret the new field as it does not know about it. So when it decodes it, and change something and then further encodes it and wirte to DB, the new field will get lost.
+So here its the responsibility of old code to just leave the new fields as it is and don't remove them. 
+
+Data outlives code - In our DB we can have data that is 5 years old as well as 5 ms old. The code that we write can be changes in a few mins, but it is hard to change data schema that has been there for years. We can certainly rewrite everything but that is not possible as it is very expensive. Instead generally we add a new column and when the old data is read, while again encoding we add this new column value (default).
+
+Dataflow through Services: REST and RPC
+processes communicating over a network. CLients sending the request, Servers honoring the request. Servers exposes the API over the network, clients connect to the servers ti make the requests.
+Webbrowser can also act like clients. They act like HTTP client and make API calls. The data is send in an encoded format such as JSON. 
+CLient side and server side need to agree on few things. These things can be application specific. For ex. That the data will be in this format or the response time wil be this much.
+
+One service can also acts like a client to another service. For ex. web app server asking data from DB (webapp server is a client and DB is a server).
+This is called microservices architecture where services communicate with each other and data is sent over network. 
+
+Services are similar to DBs. We can ask some data from them. Unlike DBs where we can use some query language to get any arbitratry data, services exposes APIs. Only via these APIs we can get data. Services can put strict rules over what a client can and cannot get. This provides a layer of encapsulation.
+For ex. Consider CVLT, Server side code (IDA specific) should not directly talk with DB, instead we create AppMGR APIs. These AppMgr APIs acts as a middleware. AppMgr APIs gets data from DB, and server side code call these APIs.
+
+Web Services
+When HTTP is used as an underlying Protocol for talking to a service, it is called as a webservice.
+webservice is not limited to Web APps.
+1. Mobile apps can also make request to a service over HTTP.
+2. One service making request to another service within an Org. microservices
+3. One service making call to another org service. These are called public APIs. 
+
+
+REST is not a Protocol but rather a design build upon the principles of HTTP. Simple data formats, Using URLs for identifying resources and using HTTP features for cache control, authentication etc. REST is more popular compared to SOAP in terms of cross organization APIs, microservices.
+
+SOAP follows XML based Protocol. This is independent from HTTP. Heavily relies on tools, IDEs. The framework is complex and not human readible requests.
+Not supported by dynamically typed languages, hard to integrate with services that uses SOAP.
+
+The problem with RPCs
+RPC model tries to make a request to a remote network look the same as calling a function or method in your programming language. 
+issues
+1. A local function call will either fail or succeed, but the network calls are unpredictable. The calls can betg lost due to network issues.
+2. A local function will either return a result or throws an exception. The network calls may return without a result. We will have no way of knowing if it went through or not.
+3. If you retry a failed req, there maybe a chance that the req went through but the response get lost. This is not an issue with function calls.
+4. Function calls take same amount of time, network calls can be unpredictable due to latency issues.
+5. For local functions we can use pointers/local memory. For network calls we need to send data in sequence bytes.
+6. Client and service can be in different languages, we need to translate data types. Not an issue with function calls as they are in same language.
+
+Despite all these problems RPCs are still famous. Various RPC frameworks have been built. For ex. GRPC, Thirft etc.
+gRPC suports strems where a call consists of not just one req and one resp, but a series of req and resps.
+Custom RPC Protocols with binary encoding format can achieve better performance than something generic like JSON over REST. But REST is still the most obvious choice as it is widely popular, easy to use and there is a vast ecosystem of tools.
+
+RPC clients and servers are independent. All the servers will be updated first. We will need Backward compatibilty for requests (Servers still honoring all requests versions) and Forward compatibilty for response (clients honoring the new response versions).
+For cross organization network calls, we cannot force the clients to upgrade. Thus services needs to maintain compatibilty for a long time. It need to maintain the older version as well. We can change the API version by specifying in the URL.
+
+GRPC - Based on HTTP/2 and uses Protocol buffers for encoding the data. Bidirectional supports, both client and server can send streams of messages. Long lived communication. Cross language support, Easily pluggable with components like load balancer, authentication etc.
+GRPC is generally used for microservices and within and org network calls.
+
+
+Message passing Dataflow
+Message Broker - async message passing system.
+Message Broker has several advantage over RPC
+1. It can act as a buffer if the recipeint is unavailable or overloaded.
+2. It can automatically redeliever messages to a process that has crashed and thus prevent messages from being lost.
+3. The sender need not know the IP and port number of recipeint
+4. It allows one message to be sent to several recipeint
+5. it decouples the sender from recipeint
+
+Also there is only one way communication. Sender just sends the message and does not expect to recive a response.
+Basic implementation of a message broker is this: A sender sends a message to a queue, all the subscribers/consumers of that queue will recieve that message. There is only one way communication in this queue. Further the recipeintcan have other queues via which they can propgate these messages.
+If the recipeint have another queue to sender we can have a Bidirectional communication similar to an RPC.
+All these messages are in byte sequence.
