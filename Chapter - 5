@@ -1,0 +1,61 @@
+Distributed Data
+
+Why do we want to Distribute data in different machines?
+1. Scalability - If data volumne, read load or write load is much higher than a single machine can handle its good to Distribute it across multiple machines.
+2. Fault tolernace/high availabiltiy - If Data is present in multiple machines if one machine goes down other can take over.
+3. Latency - If our customers is across the globe, its good to get them the data from there nearest datacenter to reduce latency. Makes sense to have multiple data center distributed across the globe.
+
+Scaling to higher load
+Why to have multiple machines? Why not a single more powerful machine? (Vertical Scaling)
+1. Cost is much higher (Load will not be handled as much as the cost is increased)
+2. No fault tolernace - If this machine is down, we are screwed.
+
+Another approach is shared disk approach
+Meaning we will have multiple machines, but all the data will be stored in a single machines disks.
+This will have further issues like locking limits the scalability
+
+Shared nothing architecture (Horizontal scaling)
+Each machine running the DB software is called a node. Each node uses its CPU, RAM and disk independently.
+
+
+Replication vs Partitioning
+There are 2 ways data is distributed across multiple nodes
+Replication - Keeping a copy of same data on several different nodes. Provides redundancy.
+Partitioning - Splitting a big DB into smaller subsets called partitions so that different partiotions can be assigned to different nodes.
+
+
+
+
+===================
+Chapter - 5
+Replication
+
+Replication means keeping the copy of same data on multiple machines
+
+Advantages:
+1. Keeping data geographically close to users (Reduce latency)
+2. To allow system to continue working even if some parts have failed (increase avaibility)
+3. Increase machines so that higher read throughout
+
+If our data is not changing then replication is not an issue.
+The issue arises when data keeps changing and all the machines must maintain the same data.
+To resolve this we have 3 algos
+    - Single leader
+    - Multi leader
+    - leaderless
+
+Leaders and Followers
+The most common way to maintain same data across multiple replicas is to have the master-slave config. All the writes will go to the master, master updates itself, sends a message to all the other replicas to update themselves. Read request can go to any replica.
+So from users pespective we have only one write DB and multiple read DBs.
+
+This is by default present in Most relational DBs (PostgreSQL, MySQL, SQL Server) and some NoSQL DBs (MongoDB).
+
+Synchronus vs Asynschronus replication
+In sync replication, Once a write is done on master, master send writes to its followers, as soon as one follower return success, the request will be success, We will not wait for other replicas success messages. So we should have atleast 1 sync replica and other can be async.
+This ensures that we will always have atlest 1 follower who is in sync with the leader, so in case the leader goes down we can use the follower.
+There is no point in waiting for all the followers, If we wait our request will get highly slow.
+
+This config is called semi sync relication, in which we have 2 nodes with most recent data.
+
+Often leader based replication is completely async. We do not wait for any followers success message.
+This has the advantage that leader can continue processing write even if the followers are fallen behind. This can lead to durability issues as if the leader is down, we will lost the most recent writes, but still its a tradeoff most companies are willing to take.
