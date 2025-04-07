@@ -88,3 +88,24 @@ Failover is a very error prone process, A lot of things can go wrong.
 2. Discarding writes is especially an issue when the other storage systems have the data present. For ex. In Github once a out of sync follower was made a leader. They have an autoincrementing counter for the primary key, due to this a wring counter was chosen as the primary key and writes are done. But there was also a Redis store which was using this primary key but it has the latest key from the old Leader, Due to this wring data is shown to certain users.
 3. In certain fault scenarios, it could happen that we make 2 follower nodes as leaders, both these leaders start accepting writes, we will be in a sitation, where we have faulty writes. Best scenario would be to shutdown one leader node.
 4. What is the right timeout before a leader is declared dead? Well this depends upon system to system. We should not have too smaller timeout as sometimes there are network problems or latency issues due to which we get delayed response, due to this we will have unnecessary failovers. 
+
+
+WAL Shipping
+As we saw in storage engines, In LSM trees we write the data in log files itself. In B-tress we first write data in WAL and then change the value in disk.
+Using this log file we can regenerate the DB in case of a crash. We can use this exact same log file to build a replica on another node.
+The WAL is at a very low level, it has info like which bytes got changed in DB. this makes replication strongly coupled with storage engine, We cannot have different types of DB for leader and follower.
+
+Logical row based log repolication
+In this type we do maintain a log but it will not have the low level details. This makes replciation independent from storage engine. 
+We will store info at row based, For ex.
+    - for an insertion, we will store which data is preset in each column,
+    - for deletion we will store how to uniqely identify the row which got deleted
+    - for update we will store the updated columns
+
+With this we can have different versions of DBs running for leaders and followers, even we can have different types of storage engines.
+
+Problems with Replication logs
+The above leader based architecture works perfectly when our system has high reads. We just setup new followers so that read demands are fulfilled.
+This works well only for async replication. For sync replication if one node goes down our entire system will be haulted during a write.
+However we may see inconsistent results, our followers may not be up to date, due to which leader and follower will show different data. But if stop the writes, the follower will eventually catch up with the leader, this is known as eventual consistency.
+This delay between the follower and leader is called replication lag. Usually it is of seconds, but sometimes it can be in minutes, this will lead to inconsistemt results.
