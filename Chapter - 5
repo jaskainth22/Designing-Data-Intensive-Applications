@@ -59,3 +59,32 @@ This config is called semi sync relication, in which we have 2 nodes with most r
 
 Often leader based replication is completely async. We do not wait for any followers success message.
 This has the advantage that leader can continue processing write even if the followers are fallen behind. This can lead to durability issues as if the leader is down, we will lost the most recent writes, but still its a tradeoff most companies are willing to take.
+
+==============================================
+07/04/2025
+
+
+Setting up new followers
+If we want to add a new follower, we just simply cannot copy the data from leaders DB and put it in followers DB. The writes are continuous and they would not make sense, and we would lost the data. Other approach would be to lock the DB for writes and copy the data but this will lead to availability issues.
+Best approach would be to take a snapshot of the leader DB at certain time, using that snapshot build the follower, and then have a list of the all the changes done at the leader after the snapshot is taken and update those changes in follower. Now the follower is in sync with leader.
+
+Handling node outages
+How can we hanlde node outages? What to do when one of the nodes is down, how to make sure that the whole system is running?
+
+follower failure:
+If one of the follower node is down, it can catchup quite easily. Each follower node has a log of all the changes that it received from leader. If the node crashes, it can easily rebuild itself using the logs. It can then ask the leader to send all the updates after it got crashed and then catch up with the leader.
+
+leader failure: Failover
+Leader is down, one of the follower is elected to be the new leader, CLients need to send writes to the new leader, The follower should start consuming writes from the new leader. This process is called Failover.
+
+Failover can happen manually or automatically.
+Manual failover steps:
+1. Determining the leader has failed: We can use the timeout mechanism to detect this. Nodes keep sending messages to each other, if for a certain period of time we do not get a response back, we can tell that the node is down. 
+2. Choosing a new leader: This is usually done by an election process where all the follower nodes choose there new leader. The best candiate would be who has the most up to date changes.
+3. Reconfiguring the system to use the new leader: Clients now need to send the write requests to the new leader, other followers should start taking updates from this leader. If the original leader comes back up, it will still think that it is a leader, we need to make it a follower now.
+
+Failover is a very error prone process, A lot of things can go wrong.
+1. If async replication is used, the new leader may not have all the writes from the old leader. So what will we do? When the old leader comes back up it will have conflicting updates with the old leader. The best solution would be to discard the old leaders writes, but this will lead to durability issues.
+2. Discarding writes is especially an issue when the other storage systems have the data present. For ex. In Github once a out of sync follower was made a leader. They have an autoincrementing counter for the primary key, due to this a wring counter was chosen as the primary key and writes are done. But there was also a Redis store which was using this primary key but it has the latest key from the old Leader, Due to this wring data is shown to certain users.
+3. In certain fault scenarios, it could happen that we make 2 follower nodes as leaders, both these leaders start accepting writes, we will be in a sitation, where we have faulty writes. Best scenario would be to shutdown one leader node.
+4. What is the right timeout before a leader is declared dead? Well this depends upon system to system. We should not have too smaller timeout as sometimes there are network problems or latency issues due to which we get delayed response, due to this we will have unnecessary failovers. 
