@@ -89,6 +89,15 @@ Failover is a very error prone process, A lot of things can go wrong.
 3. In certain fault scenarios, it could happen that we make 2 follower nodes as leaders, both these leaders start accepting writes, we will be in a sitation, where we have faulty writes. Best scenario would be to shutdown one leader node.
 4. What is the right timeout before a leader is declared dead? Well this depends upon system to system. We should not have too smaller timeout as sometimes there are network problems or latency issues due to which we get delayed response, due to this we will have unnecessary failovers. 
 
+Implementation of Replication logs
+How does leader based replication works under the hood?
+
+1. Statement based replication
+    leader logs everything, and then send all the logs to followers. Suppose we have a relational DB, leader will log all the SQL queries and then send the exact same queries to followers. For followers this is very similar to getting requests from clients.
+    But there are few issues in this approch
+        - For functions like NOW() or rand() we will have different values in each replica
+        - All the SQL queries should be done in the same order else we will have issues
+    This type of approach is rarely used now a days as we have better appriaches.
 
 WAL Shipping
 As we saw in storage engines, In LSM trees we write the data in log files itself. In B-tress we first write data in WAL and then change the value in disk.
