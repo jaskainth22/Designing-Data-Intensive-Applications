@@ -137,3 +137,27 @@ For this to work all the read requests for one user should go to the same follow
 
 3. Consistent prefix reads - If multiple writes are happening, then reads should also happen in the same order. We should not see a write which happens later before a write which happened before. This is particuarly an issue in sharded DBs. Sharded DBs operate independently. So its hard.
 What we can do is for one user all the writes should go to one shard.
+
+Multileader replication
+Having multiple leaders who accept writes, each leader will act as a follower for another leader.
+
+Where exatly can we use Multileader replication?
+1. MultiData center - Normally in a multidatacenter if we have a single leader, it will be present in any one datacenter. It will then update all the followers in all the datacenters. This can be time consuming as data centers can be very far away and we need to send these updates over public network. Within a datacenter sending updates are fast as we use private network. In a multileader config, we have 1 leader in each datacenter, each leader can accept a write, once a write is done, it will send updates to each leader in other datacneters, they will then further update there followers.
+There is one issue, if there is a concurrent write on same data in two different datacenters, we need to do conflict resolution.
+
+2. Clients with offline operation - Consider the calendar app, we can view and write meeting in the calendar app even if its offline. When it gets internt connection, we need to send these updates to the other devices. So each device have a local leader which do all the writes, once it gets internet connection, it sends all the updates/writes to other clients. Here each client is a datacenter and there is very big network outages between them.
+
+3. Collabrative editing - Consider Google docs, multiple people can edit at the same time. Same situation in case of DBs. Mutiple leaders writing at the same time. This can lead to serious conflict resolution issues.
+
+Hadling write conflicts
+As discussed the biggest problem in Multi leader replication is conflict resolution, if 2 leaders concurrently update the same data, we will have an issue.
+ - In a single leader, we would never have this issue. If 2 users want to write the data, the other user cannot write as the leader is already processing another request. The problem with multi leader will be detected very later in the futute in async replication. In sync replication, we can wait for the write operation till the data is updated in all replicas, we will detect the conflict there only but what is the point of having multiple leaders if are still waiting.
+
+Conflict avoidance - This strategy suggests that for a particular record, all the reads and writes should go to the same dataceter (leader).  With this we can avoid the concurrent siutation as the writes will go to the same node. However this will become ineffective if the datacenter goes down, then we need to use some other leader.
+
+Converging towards a consistent state
+If we are having 2 different values for the same data due to concurrent writes by 2 leaders, we should resolve this and get towards a consistent state,
+ - either use a GUID/timestamp with each write operation and let the bigger value be the final, but this will lead to data loss.
+ - Have a no. for each replica, and the replica with bigger no. have the final value, still a bad approach and lead to data loss.
+ - Let the application code handle it by asking the user. User should decide which value to choose. 
+
