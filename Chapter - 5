@@ -118,3 +118,22 @@ The above leader based architecture works perfectly when our system has high rea
 This works well only for async replication. For sync replication if one node goes down our entire system will be haulted during a write.
 However we may see inconsistent results, our followers may not be up to date, due to which leader and follower will show different data. But if stop the writes, the follower will eventually catch up with the leader, this is known as eventual consistency.
 This delay between the follower and leader is called replication lag. Usually it is of seconds, but sometimes it can be in minutes, this will lead to inconsistemt results.
+
+======================================================
+Issues due to replication lag
+
+1. Reading your own writes - When user writes something in an appliocation, the write is sent to the leader and then the leader further sent the uodate to followers. But suppose in case of async replication, user asks for the data they wrote and the request went to the follower that is not yet updated, user will not get his data. THis functionality is not right.
+We must gurantee read after write consostency. That is user must be able to read the data they write just after the operation is done even if the page is reloaded.
+How can we implement read after write consistency?
+    - If the user write very few data, send all the reads to the leader once the user write something. For ex. If only user can update his profile, then for profile reads we can send it to follower.
+    - If the application allows multiple writes for any user, read from leader wont work as we will not have the benefit of mulitple read replicas. In that case we can have 1 min reads from leader and then from followers. 1 min is arbitraty if the replication lag is higher, this approach will again not work.
+    - Clients can remember the timestamp of the write, and for the subsequent read the request should not go to any replica whose update is not present till that timestamp. Either the read can go to any other replica or should waut till the update is done.
+    - Another issue is if user is using multiple devices, THen remembering this timestamp by client won't work, this need to be centralized.
+    - If the users are on different networks, using the leader approach also won't work as the requests can got to different datacenters.
+
+2. Monotonic Reads - User should go back in time. Meaning? If we make consecutive read requests, user should always see the same result. It should not happen that for one request it sees the latest data and for other request it sees past data (as the follower is not catched up).
+Monotonic reads does not gurantee string consistency but it guranteees more than eventual consistency. 
+For this to work all the read requests for one user should go to the same follower. We can use some hashId to determine which users requests go to which server, However if the server fails, requests will go to different server.
+
+3. Consistent prefix reads - If multiple writes are happening, then reads should also happen in the same order. We should not see a write which happens later before a write which happened before. This is particuarly an issue in sharded DBs. Sharded DBs operate independently. So its hard.
+What we can do is for one user all the writes should go to one shard.
