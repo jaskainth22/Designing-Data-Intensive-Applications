@@ -161,3 +161,34 @@ If we are having 2 different values for the same data due to concurrent writes b
  - Have a no. for each replica, and the replica with bigger no. have the final value, still a bad approach and lead to data loss.
  - Let the application code handle it by asking the user. User should decide which value to choose. 
 
+
+===================================
+09/04/2025
+
+Custom conflict resolution logic
+We can add the conflict resolution logic in applicatipon code. 
+On write - As soon as write is done and we detect a conflict, code should run to resolve that conflict
+On read - When the next read is done and conflict apperars, either we let the user resolve the conflict or do it automatically. Cockroach DB does this.
+
+Automatic conflict resolution
+There are certain algorithms that have been introduced to do this. Certain datatypes/data structures are designed to handle concurrent editing. 
+
+
+Another ex. of conflicts is consider a meeting room booking system. Suppose 2 different people book meeting concurrently for the same time and the req went to two different leaders. In later parts of the book we will see how ton better resolve these issues. 
+
+
+Multi leader replication toplogies
+All to All - Each leader will send the writes to all other leaders
+Circular - One leader will send writes to the other leader, the second leader along with the writes from first and its own, send it to the next and so on. THis moves in a circular fashion.
+Star - A node is present in the center, and it sends update to all the nodes around it. 
+
+All to All is the most preferrable one. In Circular and Star if one node fails it will stop the replication process for all the other nodes as well. 
+However there are issues with All to All as well. Suppose L1 sends writes to all L2, L3 and L4. It reaches in time to L2 and L3, But before it reaches L4, another write is done by L3 on the same data, and that reaches L4 before the write from L1. THis is the same issue as in concurrent read prefix. We need to carefully design our systems and handle these problems.
+
+Leaderless replication
+Unlike leader and multi leader approach, in this the write request go to any arbitrary node. Sometimes the client sends the request to all the nodes parallely.
+Dynamo Amazon's Inhouse datastore uses this approach. This is not DynamoDB.
+Suppose client sends a write requests to all the replicas, R1, R2, R3. R1 and R2 acknowldeged the write but R3 was down at that time. Suppose if our writes are deisgned in such a way that we got OK from more than 50% the requests are Good. R3 is still having old data.
+Now for the read the req. again go to all the replicas. R1 and R2 gives latest data and R3 gives old data.
+We can use Version numbers to resolve this issues.
+
