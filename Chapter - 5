@@ -192,3 +192,70 @@ Suppose client sends a write requests to all the replicas, R1, R2, R3. R1 and R2
 Now for the read the req. again go to all the replicas. R1 and R2 gives latest data and R3 gives old data.
 We can use Version numbers to resolve this issues.
 
+================================
+12-04-2025
+
+
+How to ensure latest data is getting copied in all replicas?
+1. On Read - Since client sends read request to all the replicas, it can detect which replicas are left behind. It then sends update request in those replicas.
+2. Process - A process keeps running, which will detect all the replicas which are left behind. And sends update to those replicas.
+
+Quorum consensus
+If there are n replicas, We must have a successfull writes in at least w replicas and we must send read request to at least r replicas.
+ w+r > n
+These are quorum reads and writes. 
+
+W = No. of replicas that must agree for a write (wait for acknowledgement from w nodes before confirming write success)
+R = We sends read request to all n nodes, r nodes must acknowledge the request. We get the data from r nodes and compare there versions and return latest one.
+
+
+Normally reads and writes are sent to all the replicas in parallel, w and r determines how many nodes we wait for a success.
+
+ex. n=5, w=3, r=3 We can toleratre 2 nodes to be down. We require acknowldegement from 3 nodes for each read and write operation.
+If fewer than w or r nodes returns a success, we fail the operation. 
+
+For read heavy and limited writes system, we can keep R=1 and W=n. This will make reads faster. But even if a single node is down, our write operation will be unsuccesfull.
+
+If w+r > n, this ensures that our every read will be latest. Bcz atleadt one node will overlap between the read and write request.
+
+If we keep w+r <= n, this ensures low latency and high availability, But we are not sure if our reads will give us the same data. Its possible that reads return stale data, as no node is overlapping between the read and write requests.
+
+There are some edge cases where w+r > n still return stale values.
+    - If two writes happen concurrently, its not clear which happended first. We need to keep only the latest or one configured based on conflict resolution algo. This will lead to lost write and there may be not overlap anymore.
+    - If read and write happen concurrently. We may get stale data.
+    - If write failed on some replicas and we have fewer than w replicas, the operation is failed. If we do not roll back on the succeeded replias, this will  be discrepancy.
+    - If a node carrying latest data crashed,  we may have fewer than w nodes with latest data breaking the quorum.
+
+Monitorning stalelessness
+In replicated environments, we need to keep track how far is a node. Or how much is the replication lag. In leader based architecture its easy, as we have a leader and we can detect the lag for the followers. If some nodes are too far behind we need to investigate.
+However in leaderless replication, its difficult to monitor. Why? Bcz writes are not fixed, and if we are just using read repair for replicating latest data, the lag can be huge.
+
+
+Sloppy Quorums and Hinted Handoff
+In leaderless replication, if quorums are set correctlty, we don;t need to do failover for a node that went down as out system will keep on working if we have atleadt w and r nodes availble. Also we don't need to wait for slower nodes to process data, as we just need confuramtion from w or r nodes. This makes it very low latency and highly availble, and fault tolerant.
+
+Suppose one of our clients lost connection with most of the nodes (within the n nodes). For the client now it cannot do any read or write operation as the w or r are not matched. A quorum is not reached.
+But suppose in the system there are orther nodes as well (apart from these n nodes). TO these nodes the client can connect.
+SO what should we do in this scenario?
+Should we just return an error for the write request as w is not matched?
+Or should we use the nodes from other than these n nodes? (As with them w is matched).
+Well this is called sloppy quorums. We will write the data temporarily to these other nodes and once we establish a connection with the original nodes (n nodes), we transfer this data to them. This transfer pricess is called hinted handoff.
+This ensures that our system is availble for the write operations. High write availability.
+
+Cassandra, Voldmort, Azure Cosmos DB all follow leaderless replication.
+
+MultiData center operation - Leaderless replication, is useful in multidata center replication as wll. In some DBs which uses leaderless replication, the n nodes are present in multiple data centers. In some DBs, the n nodes are within a single data center and the replication to other datacenters happens async
+
+Detecting Concurrent writes
+In leaderless replication also we have the same issue of concurrent writes. Multiple client can write the same key in multiple nodes, leading to conflicts. We must resolve these conflicts and all the nodes should have the same data. We should reach towards a consistent state.
+
+Now how to resolve these conflict resolutions? We saw some techniques earlier in leader based replication, let see few more.
+
+1. Last write wins (discarding concurrent writes)
+    This means that with each write we should attach a timestamp, And if there is a conflict the newer write should be kept and all the older one is discarded. This is followed in Cassandra. But in this approch we have data loss, we have durability issues. If we dont; want our data to lose this is a poor choice. 
+    This is useful in DBs where keys are immutable that means once written the keys will not change. In cassandra the recommended way to write is having a unique UUIDs as keys.
+
+What operations are called concurrent? 
+    Well in theory it means that two operations occuring at the same time. Well this is very rare. In CS we say that 2 operations are concurrent when these two operations don;t know aything about each other.
+    For ex. Suppose operation A happens operation B, HOW? Operation B knows about the existence of operation A. Two operations are concurrent if they don;t know anything about each other. Its possiblt that the timestamps are different but still they are concurrent.
+
