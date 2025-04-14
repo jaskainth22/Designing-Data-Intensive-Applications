@@ -259,3 +259,25 @@ What operations are called concurrent?
     Well in theory it means that two operations occuring at the same time. Well this is very rare. In CS we say that 2 operations are concurrent when these two operations don;t know aything about each other.
     For ex. Suppose operation A happens operation B, HOW? Operation B knows about the existence of operation A. Two operations are concurrent if they don;t know anything about each other. Its possiblt that the timestamps are different but still they are concurrent.
 
+
+Version vectors
+Version vectors are used to identify concurrent updates and do conflict resolution.
+Each node maintains a version vector for each key. Suppose two replicas are there and both can do write operation.
+Both maintains versoin vectors.
+
+Intially version vector for a key is [0,0]
+Node A updates the key and add PS5, the VV becomes [1,0] | [PS5]
+Node B without the knowledge of this update by A, add XBox, The version vector becomes [0,1] | [XBOX].
+
+These version vectors along with the value added to the key are sent to the client. Now Node A, adds another item to the key, Monitor. Since
+its version vector wa [1,0] | [PS5] it adds Monitor to the list and increment the version vector [2,0] | [ps5, monitor].
+Now when the changes are replicated to each replica, there is definitely a conflict. 
+Node A has version vector [2,0], and node B has version vector [0,1].
+Now for resolving the conflict we will create another version vector [2,1]. It will have the values from both replicas as seperate lists.
+[2,1] | [ps5, monitor] | [xbox]
+
+Either we can merge these 2 lists, or show user that these 2 lists are there, resolve the conflict yourself.
+
+
+Or we can use CRDTs (Conflict resolution data types). these will resolve conflicts automatically.
+
