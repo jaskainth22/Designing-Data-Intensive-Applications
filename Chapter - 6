@@ -27,3 +27,10 @@ So how to resolve this? We can randomly write data to different partiotions. Yes
     For ex. Our hash function returns 0-1000000. These ranges will be distirbuted across partiotions evenly.
     When we take hash of a key, We will put that key in that partition. With this way keys are evenly distributed across partiotns.
     If the ranges are not evenly distributed this is something similar to Consistent Hashing. In consistent hashing we choose random partition boundaries to avoid the need for central control. Consistent hashing does not work very well with databases. We will see later why.
+
+    The con here is that we lose the sorted order of keys. Earlier the keys were sorted and in the same partition, we were able to do range queries.
+But niw this is not possible. If we do a range query in MongoDB, we need to go to multiple partition. Range queries are not supported in Riak, CouchBase or Voldemort.
+
+Skewed Workloads and Relieving hotspots
+hashing the key removed the skew and hotspot issue, but does not resolve it completely. If the read and write are in the saome key, we have the same issue.
+For ex. Consider a celebrity, If they post something, all the reads and wirtes will be for that celeb key, it will go to the same partiotin. Now it on the application code to resolve this issue, If they see a key is a hotspot, they should add some random digit at the end, this will lead to splitting the data across multiple keys and hence partiotions. But still this adds overhead, hence not recommended.
