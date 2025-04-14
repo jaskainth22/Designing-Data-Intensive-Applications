@@ -281,3 +281,15 @@ Either we can merge these 2 lists, or show user that these 2 lists are there, re
 
 Or we can use CRDTs (Conflict resolution data types). these will resolve conflicts automatically.
 
+
+
+
+
+
+In the end for conflict resolution we can have following techniques 
+1. Avoid conflict - Send all the writes and reads for a key to the same node. Not scalable and if the node went down, we are back to square one.
+2. Last write wins - Add timestamp and make the last write wins. Leads to data loss, Durability issues.
+3. On Read - When the data is read, and we detect a conflict asks user to resolve this.
+4. On write - When conficts are detected during a write, use CRDTs to resolve these conflicts automatically.
+5. Version vectors - Use version vectors to detect conflicts, and either merge these conflicts or let user do them.
+
