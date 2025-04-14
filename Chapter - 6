@@ -1,0 +1,29 @@
+Partitioning
+
+IN Replication  we sturdies how the same data is copied over multiple nodes, so that we have high availabiltuy, fault tolerance and high read or write thorughput.
+In Partitioning, we divide our large dataset into smaller datasets and these datasets are present on nodes. All these nodes works independetly. If we want to fetch some speicifc data , we need to reach that node. This is done for scalability. If our dataset it too large it will be hard to handle by a single node.
+
+Partioning is combined with Replication. The data is divided in multiple datasets and stored on multiple node. THen we store the copies of these datasets on other nodes. This way we have same dataset in multiple nodes.
+
+Each node can store multiple partitions. We will have leader for each partiotin and followers. These are distributed across multiple nodes.
+Each node acts as a leader for some partitions and followers for others.
+
+Partiotioning of a key value data
+How to make sure that the data is evenly spread across partioions?
+Ideally if we think, we distribute data across 10 nodes, we should be able to have 10 times more storage and 10 times more read/write throughput. But sometimes this does not happen. All the load falls on a small set of partiotions. These are called skewed partions, When the data is not evenly spread. The partition on which we have high load is called a hotspot.
+
+So how to resolve this? We can randomly write data to different partiotions. Yes this will solve this issue, but how will you know which data is present in which partioion? You need to make read requests to all the partitions in parallel.
+
+1. Partiotioning by Key Range
+    We divide the data based on the keys. For ex. All the keys starting from A-D in P1, E-L in P2, M-Z in P3. If we know these partitoin ranges and also know which partioton is stored in which node we can easily make the read requests.
+
+    In this type of partiotioning, we may have situations in which some partiotion have more data and some partiotions have less data. If we need to evenly distribute data across partiotins we need to adjust the partiotn boundaries accordingly.
+    Within a partition the data is stored in a sorted format (using SS tables and LSM trees). With this we can easily make range queries.
+    However the downside of key based partiuoning is hotspots. There might be chances that only one node is doing all the work. How?
+    Consider a DB, that writes data based on timestamp as key. So we partioin based on timestamps. So all the writes for today, will end going to the same node and that node will be a hotspot. To avoid this problem, we need to use some other thing as key instead of timestamp. Like what? We can have sensor name as primary key followed by timestamp,
+
+2. Partiotining by hash of key
+    We should have storing has functions. We take hash of the keys and then put them in different partiotins. Each partiotion is assigned some hash ranges.
+    For ex. Our hash function returns 0-1000000. These ranges will be distirbuted across partiotions evenly.
+    When we take hash of a key, We will put that key in that partition. With this way keys are evenly distributed across partiotns.
+    If the ranges are not evenly distributed this is something similar to Consistent Hashing. In consistent hashing we choose random partition boundaries to avoid the need for central control. Consistent hashing does not work very well with databases. We will see later why.
