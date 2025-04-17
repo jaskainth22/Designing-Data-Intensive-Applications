@@ -34,3 +34,7 @@ But niw this is not possible. If we do a range query in MongoDB, we need to go t
 Skewed Workloads and Relieving hotspots
 hashing the key removed the skew and hotspot issue, but does not resolve it completely. If the read and write are in the saome key, we have the same issue.
 For ex. Consider a celebrity, If they post something, all the reads and wirtes will be for that celeb key, it will go to the same partiotin. Now it on the application code to resolve this issue, If they see a key is a hotspot, they should add some random digit at the end, this will lead to splitting the data across multiple keys and hence partiotions. But still this adds overhead, hence not recommended.
+
+
+Partitioning and Secondary indexes
+In our key value data model, If we are doing partitioning just on the primary key its very easy. We can directlty follow that primary key for our read and write operations. Issues arises when we have secondary indexes. 
