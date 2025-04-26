@@ -38,3 +38,27 @@ For ex. Consider a celebrity, If they post something, all the reads and wirtes w
 
 Partitioning and Secondary indexes
 In our key value data model, If we are doing partitioning just on the primary key its very easy. We can directlty follow that primary key for our read and write operations. Issues arises when we have secondary indexes. 
+Secondary index doesn't identify a record uniquely but rather is a way of searching for occurences of a particular value.
+
+
+1. Partiotioning Secondary indexes based on document
+Based on the documentId/ primary key we partiotined the DB. Each Partiotion maintains its own secondary index. Suppose we have a DB conataining car info. Keys from 0-500 in P1, 500-1000 in P2. It has two secondary indexes on color and brand.
+Each partition maintains its own secindary index. Writing is easy in this case. Just add the entry in the correct partition and there secondary indexes.
+Reading is difficult. Suppose we need to search for all the casrs with a particaulr color, we need to send the requests to each partition. This can lead to latency issues.
+
+2. Partiotioning secondary indexes based on terms
+Instead of having a seperate secondary index in each partition, we will have a single secondary index mapping, called the global index. It will contains entries from all the partiotions. 
+This make read requests based on a secondary index very easy. The request now just need to go to the secondary index.
+However this secondary index can grow in size, and we should partition it into multiple smaller partitions and store that on seperate nodes.
+Partitioning the secondary index can be done based on key or hash. For ex. supppose we have secondary index based on color, So all colors from A-P goes in one partition, all the remaining goes in another partition. This can help in range queries. However can suffer from skewed and hotspot problem. We can do hash based partitioning but then will lose the range based support.
+Writes are difficult in this approach, because the main write can go to some partiton and the secondary index may lie in some other partition.
+
+
+Rebalancing Partitions
+With time, We need to add More CPUs to handle query throughput. We need to add more disks to handle dataset size increase. A machine may fail.
+Due to all of this we need to transfer load frmo one node to another. This process is called rebalancing.
+
+Rebalancing should follow some minimum requirements:
+1. After rebalancing the load should be fairly distributed between the nodes.
+2. while rebalancing is happening, DB should keep accepting read and write requests.
+3. No more data then necessary should be moved between the disks.
