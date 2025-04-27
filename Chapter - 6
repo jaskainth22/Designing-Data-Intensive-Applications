@@ -62,3 +62,105 @@ Rebalancing should follow some minimum requirements:
 1. After rebalancing the load should be fairly distributed between the nodes.
 2. while rebalancing is happening, DB should keep accepting read and write requests.
 3. No more data then necessary should be moved between the disks.
+
+
+Strategies for rebalacning
+
+1. Based on hash key
+We can think that each node should contains data from some specific key range only. For ex. N1 conatins keys from 0-250, N2 contains keys from 251-500. Whenever a key comes we can do hash(key)%N. Where N is the number of nodes. Well this works fine, but if the number of nodes increases or decreases, keys needs to be shifted among the partitions, this is too much of an overhead. Suppose earlier for key x, we were going to node 0 ,now we have to go to node 1. SO this mapping gets changed. This is overkill and bad design.
+
+2. fixed number of partitions
+Create many more partiotns than there are nodes and assign several partitions to each node. For ex. a DB running on a cluster of 10 nodes may be split into 1000 partitions, so that approx 100 partitions are assigned to each node.
+If a node is added, some partitions can be moved from each node to this new node, If a node is removed, partitions are put in other nodes.
+
+Since only entire partitions are moved between nodes, key assignment does not change.
+This type of rebalancing is used in Riak, Elasticsearch, Couchbase, Voldemort.
+
+In this config, the number of partitions stays fixed. 
+
+3. Dynamic partitioning
+For DBs that uses key range partitioning, a fixed number of partitions with fixed boundaries, can cause issues. There maybe a scenario where all the data may end up in a single partition. SO in that case we use dynamic partitioning, if the data exceeds certain threshold, that partiotion is split in 2 new partitoons, each containing half of the data.
+If a lot of data is deleted from a partition, it can be merged with adjacent partitions.
+Each partition is assigned to one node, and each node can handle multiple partitions. When a partition is split in 2 partitions, 1 partiton is assigned to a new node.
+Dynamic partitioning is helpful both in key range and hash based partitioning. 
+The only caveat here is that, initially, there will only be one partition, and as the size grows, the partitions are created based on keys. SO initially all the work is done by only one node and other nodes stays idle.
+
+
+====  CHATGPT on Rebalancing partitions========
+
+Summary:
+Rebalancing partitions means redistributing data and workload across nodes when a database’s conditions change (e.g., added nodes, node failures, increased data).
+Rebalancing should:
+
+1. Distribute load fairly,
+2. Continue operations during rebalancing,
+3. Minimize the amount of data moved.
+
+There are different strategies for partitioning and rebalancing:
+
+1. Hash mod N (bad idea): If you hash keys with mod N, changing the number of nodes causes almost all keys to move, making rebalancing expensive.
+
+2. Fixed number of partitions: Predefine many partitions (e.g., 1,000), assign them to nodes. When nodes change, partitions are reassigned without redefining how keys map to partitions. Used by databases like Riak, Couchbase, and Elasticsearch.
+
+3. Dynamic partitioning: Partitions are split or merged based on size dynamically. Used by systems like HBase and MongoDB. Good for unpredictable data growth but initially puts all load on one node unless pre-splitting is done.
+
+4. Partitioning proportionally to nodes: Systems like Cassandra create a fixed number of partitions per node. When nodes are added, existing partitions are split and shared. Helps keep partition sizes stable relative to total data size.
+
+Explanation:
+When running a distributed database, data is partitioned (split up) across multiple nodes. Over time, the system changes—more users, more data, or hardware changes—so you need to rebalance: move data around to keep the load evenly shared.
+
+Challenges during rebalancing:
+
+1. Fairness: Every node should carry a similar amount of work.
+2. Availability: Users should still be able to read and write.
+3. Efficiency: Move as little data as possible to avoid expensive network and disk usage.
+
+Why hash mod N is bad:
+Using hash(key) % N ties your data directly to the number of nodes (N). So if N changes, almost all the keys move, causing massive data reshuffling. That's slow, costly, and dangerous for uptime.
+
+Better options:
+
+1. Fixed number of partitions:
+Pick a large number of partitions from the start (e.g., 1,000).
+Each node gets several partitions.
+If a new node joins, just move some partitions to it.
+Good for: Predictable growth and relatively steady hardware.
+
+2. Dynamic partitioning:
+Start with a few partitions and split them as data grows.
+Merge partitions if data shrinks.
+HBase and MongoDB use this style.
+Good for: Unpredictable or huge growth.
+Problem: Initially, a small dataset can overload a single node unless you "pre-split" ahead of time.
+
+3. Partitions proportional to nodes (Cassandra's way):
+Each node gets a fixed number of partitions.
+When a new node comes, it randomly splits some partitions and takes half the data.
+Helps maintain a steady partition size even as more nodes or more data come in.
+Based on consistent hashing principles.
+
+=================
+
+Automatic or manual rebalancing
+So who should do the rebalacning work? Should this be done automatically when the partition size increases or nodes are added removed, or this should be done by a Human?
+Well a human interaction should be there, system should detect that the nodes are getting full and needs rebalacning but in the end a human interaction should be required, else system can automatically choose to do this.
+Rebalancing is an expensive operation. During the rebalacning the read/write requests can take a lot of time. So suppose if a node is overloaded and taking time to respond, other nodes mught think that it is dead and may start an rebalcning opertaion. But this will lead to further stress on the node.
+
+Request Routing
+How does we know where does a key recide? We know the partition in which key is present (either through key based partitioning or hash based partitioning). But we dont know the node in which the partition recides. 
+There can be 3 approaches,
+1. Send request to any arbitary node, if it has the partiotin/key, Good. Else it will send the request to appropriate node.
+2. Have a middleware service, which should redirect the read request to right node.
+3. Client should have knowledge of this.
+
+We can have a zookeeper kind of thing, which should maintain the key mapping to partitons and further partiotin mapping to nodes.
+This zookeeper should update itself, whenever rebalancing happens. Zookeeper can be given to the client/ middleware service or each node.
+
+
+
+
+
+
+
+
+
