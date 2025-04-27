@@ -1,0 +1,15 @@
+Transactions
+A transaction is a way for an app to group several reads and writes together into a logical unit. All the reads and writes in a transaction are executed as one operation. Either the entire transaction succeeds or it fails.
+
+Most relational DBs supports transactions. With the advacement of NoSQL DBs, which usually do not offer transaction gurantees and claims to be much high scalable, highly available. They claims that transactions slows down the system.
+
+ACID (Atomicity, Consistency, Isolation, Durability)
+Atomicity - A system is different before and after a process. We cannot have a inbetween state. Atomicity in ACID means that if a transaction fails, all the previous writes in that transaction will rollback.  All operations in a transaction happen, or none do.
+
+Consistency -  The database moves from one valid state to another. This is actually NOT fully in the database's control.
+It depends heavily on your application’s rules. Consistency, in ACID, isn't really a database feature. It's an application-level goal, which you achieve by using the database's Atomicity and Isolation features correctly. For ex. In accouting the no. of credits should be equal to the number of debits, but suppose our code is not properly doing this and made a mimatch, the DB will store the entry. Its duty of the app code to keep things consistent.
+
+Isolation - Isolation in the sense of ACID means that concurrently executing transactions are isolated from each other. Each transaction pretends that it is the only transaction running on the entire DB. The DB ensures that when the transactions have committed, the result is the same as if they has run serially (one after another), even though in reality they may have run concurrently.
+
+Durability - Durability is the promise that once a transaction has committed successfully, any data it has written will not be forgotten, even if there is a hardware fault or the DB crashes. Historically, durability meant writing to an archive tape. Then it was understood as
+writing to a disk or SSD. More recently, it has been adapted to mean replication.
