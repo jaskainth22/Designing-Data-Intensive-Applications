@@ -13,3 +13,34 @@ Isolation - Isolation in the sense of ACID means that concurrently executing tra
 
 Durability - Durability is the promise that once a transaction has committed successfully, any data it has written will not be forgotten, even if there is a hardware fault or the DB crashes. Historically, durability meant writing to an archive tape. Then it was understood as
 writing to a disk or SSD. More recently, it has been adapted to mean replication.
+
+
+
+SIngle Object and Multi object operations
+Single object transactions - Suppose if we want to write/update only a single object, Then also we need to atomicity and isolation guarantees.
+For atomicity, DBs uses logs for crash recovery (If write fails in middle, and to get the previous write).
+For isolation, DBs uses locks on objects.
+
+Multi object transactions - Multi object transactions are difficult to implment. What are the scenarios where we will need multi object transaction?
+  - When secondary indexes are involved, when we update a record, for DB the secondary index is a different object, we need to upodate that as well.
+  - In a relational data model, a row can contains foreign keys, SO updating a row, we might need to update the foreign keys and other things.
+
+A key feature of a transaction is that it can be aborted and safely retried if an error occurred. ACID databases are based on this philosophy: if the database is in danger of violating its guarantee of atomicity, isolation, or durability, it would rather abandon the transaction entirely than allow it to remain half-finished.
+
+Weak Isolation Levels
+Strong Isolation provided by DBs make the DBs slower. Concurrency issues (Race conditions) occurs when two transactions tries to access/modify the same data simultaneisuly. DBs for many years have handled this problem. THey make the 2 concurrent transactions seems like serializabel (one after another) to the application code.
+
+  -> Read Committed - This ensures that when reading from DB, you will only see the data that has been committed (No dirty reads). When writing to DB, you will only overwtite data that has been committecd (No dirty writes)
+
+  Dirty reads - A transaction cannot read the updates done by another transaction until its committed. THis is very useful. Suppose if a transaction is able to read from another transaction uncommitted writes and later they rollback due to some issue, we will have problems.
+
+  Dirty writes - A transaction should not update a value when that same value is getting added by another transaction and not yet committed.
+
+Implmenting read committed
+  To prevent dirty writes, DBs uses locks on objects. At a time only one transaction can lock an object. It releases the lock when the transaction is committed.
+  To prevent dirty writes, we can again use the same lock. Every time you want to read an object you need to put on a lock first. But this will slow down our systems. Suppose a lock is put by a write transaction and that is taking a lot of time. Due to this a lot of read transactions are at hold.
+To overcome this, instead of using locks for read transactions, we should use the previous value of the entry (previous committed value). Only when the new value is committed do transactions switch over to reading the new value. 
+
+
+
+
